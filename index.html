@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BC Calc Practice</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--card:#1a1d27;--card-hover:#222633;--accent:#6ee7b7;--accent2:#818cf8;--wrong:#f87171;--text:#e2e8f0;--dim:#64748b;--border:#2d3348}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:2rem 1rem}
+.container{max-width:760px;margin:0 auto}
+h1{font-family:'JetBrains Mono',monospace;font-size:1.6rem;margin-bottom:.3rem;color:var(--accent)}
+.subtitle{color:var(--dim);margin-bottom:2rem;font-size:.9rem}
+.topic-bar{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:2rem}
+.topic-btn{background:var(--card);border:1px solid var(--border);color:var(--dim);padding:.4rem .9rem;border-radius:6px;cursor:pointer;font-size:.8rem;font-family:'DM Sans',sans-serif;transition:.2s}
+.topic-btn:hover,.topic-btn.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700}
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.2rem;transition:.2s}
+.q-num{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent2);margin-bottom:.6rem;letter-spacing:1px}
+.q-text{font-size:1.05rem;line-height:1.6;margin-bottom:1rem}
+.options{display:flex;flex-direction:column;gap:.5rem}
+.opt{background:var(--bg);border:1px solid var(--border);padding:.7rem 1rem;border-radius:8px;cursor:pointer;transition:.15s;font-size:.95rem;font-family:'DM Sans',sans-serif;color:var(--text)}
+.opt:hover:not(.locked){border-color:var(--accent);background:#161922}
+.opt.correct{border-color:var(--accent);background:#6ee7b71a;color:var(--accent);font-weight:700}
+.opt.incorrect{border-color:var(--wrong);background:#f871711a;color:var(--wrong)}
+.opt.locked{cursor:default}
+.explanation{display:none;margin-top:1rem;padding:1rem;background:#161922;border-left:3px solid var(--accent2);border-radius:0 8px 8px 0;font-size:.9rem;line-height:1.5;color:var(--dim)}
+.explanation.show{display:block}
+.score-bar{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);padding:.8rem 0;margin-bottom:1.5rem;z-index:10;display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:.85rem}
+.score-bar span{color:var(--accent)}
+.score-bar .wrong-count{color:var(--wrong)}
+.reset-btn{background:none;border:1px solid var(--border);color:var(--dim);padding:.3rem .8rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.75rem;transition:.2s}
+.reset-btn:hover{border-color:var(--accent);color:var(--accent)}
+.empty-msg{text-align:center;color:var(--dim);padding:3rem;font-size:.95rem}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>// bc_calc_practice</h1>
+<p class="subtitle">tap a topic to filter — pick answers — learn from explanations</p>
+
+<div class="topic-bar" id="topicBar"></div>
+<div class="score-bar">
+<div><span id="right">0</span> correct &nbsp; <span class="wrong-count" id="wrongEl">0</span> wrong &nbsp; / &nbsp; <span id="total">0</span></div>
+<button class="reset-btn" onclick="resetAll()">reset</button>
+</div>
+<div id="questions"></div>
+</div>
+
+<script>
+const ALL_QUESTIONS = [
+// --- Partial Fractions ---
+{topic:"Partial Fractions",q:"Decompose (5x + 1)/((x+1)(x-3)) into partial fractions.",opts:["2/(x+1) + 3/(x-3)","1/(x+1) + 4/(x-3)","−1/(x+1) + 6/(x-3)","3/(x+1) + 2/(x-3)"],ans:1,expl:"Set 5x+1 = A(x-3)+B(x+1). x=3 → 16=4B → B=4. x=−1 → −4=−4A → A=1. Answer: 1/(x+1) + 4/(x-3)."},
+{topic:"Partial Fractions",q:"∫ 3/(x² − 1) dx = ?",opts:["(3/2) ln|x−1| − (3/2) ln|x+1| + C","3 ln|x²−1| + C","(3/2) ln|(x−1)/(x+1)| + C","Both A and C"],ans:3,expl:"x²−1 = (x−1)(x+1). Decompose: A/(x−1)+B/(x+1). A=3/2, B=−3/2. Integrate to get (3/2)ln|x−1|−(3/2)ln|x+1|+C which equals (3/2)ln|(x−1)/(x+1)|+C. A and C are both correct."},
+{topic:"Partial Fractions",q:"For ∫(x²+3)/(x²+x) dx, what's the first step?",opts:["Partial fractions immediately","Long division, then partial fractions","u-substitution with u = x²+x","Trig substitution"],ans:1,expl:"Degree of numerator = degree of denominator, so you must do polynomial long division first to get 1 + (−x+3)/(x²+x), then decompose the remainder."},
+
+// --- Slope Fields ---
+{topic:"Slope Fields",q:"If dy/dx = y − x, at point (2, 2) the slope segment is:",opts:["Horizontal (slope 0)","Slope = 4","Slope = −2","Slope = 2"],ans:0,expl:"dy/dx = 2−2 = 0. The segment is horizontal at (2,2)."},
+{topic:"Slope Fields",q:"In a slope field for dy/dx = x, all segments along a vertical line x = c have:",opts:["The same slope","Slope 0","Undefined slope","Different slopes"],ans:0,expl:"Since dy/dx depends only on x, every point on x=c has slope c regardless of y."},
+
+// --- Separation of Variables ---
+{topic:"Separation of Variables",q:"Solve dy/dx = 2xy, y(0) = 3.",opts:["y = 3e^(x²)","y = 3e^(2x)","y = e^(x²) + 3","y = 3x² + 3"],ans:0,expl:"Separate: dy/y = 2x dx. Integrate: ln|y| = x² + C. y = Ae^(x²). y(0)=3 → A=3."},
+{topic:"Separation of Variables",q:"Which DE is NOT separable?",opts:["dy/dx = xy","dy/dx = x + y","dy/dx = y/x","dy/dx = eˣ · eʸ"],ans:1,expl:"dy/dx = x+y cannot be written as f(x)·g(y). The others all can be separated."},
+
+// --- Euler's Method ---
+{topic:"Euler's Method",q:"dy/dx = x + y, (0,1), step h=0.5. Approximate y(0.5).",opts:["1.5","1.25","1.75","2.0"],ans:0,expl:"Slope at (0,1): f(0,1)=0+1=1. y₁ = 1 + 0.5·1 = 1.5."},
+{topic:"Euler's Method",q:"If a solution curve is concave up and you use Euler's method, your approximation is:",opts:["An overestimate","An underestimate","Exact","Cannot determine"],ans:1,expl:"Concave up means the tangent line lies below the curve, so Euler (which follows tangent lines) underestimates."},
+{topic:"Euler's Method",q:"Using Euler with dy/dx = 2y, y(0)=1, h=0.1, find y(0.2).",opts:["1.44","1.42","1.40","1.21"],ans:0,expl:"Step 1: slope=2(1)=2, y₁=1+0.1(2)=1.2. Step 2: slope=2(1.2)=2.4, y₂=1.2+0.1(2.4)=1.44."},
+
+// --- Sequences ---
+{topic:"Sequences",q:"lim(n→∞) (3n² + n)/(5n² − 2) = ?",opts:["3/5","5/3","∞","0"],ans:0,expl:"Divide top and bottom by n². Limit = 3/5."},
+{topic:"Sequences",q:"Does aₙ = (−1)ⁿ/n converge?",opts:["Yes, to 0","Yes, to 1","No, it oscillates","No, diverges to ∞"],ans:0,expl:"|aₙ| = 1/n → 0, so by squeeze theorem aₙ → 0."},
+
+// --- Series ---
+{topic:"Series",q:"Σ (1/3)ⁿ from n=0 to ∞ = ?",opts:["3/2","3","1/2","2/3"],ans:0,expl:"Geometric series with a=1, r=1/3. Sum = 1/(1−1/3) = 3/2."},
+{topic:"Series",q:"The harmonic series Σ 1/n:",opts:["Converges to 1","Converges to ln 2","Diverges","Converges to e"],ans:2,expl:"p-series with p=1. Since p ≤ 1, it diverges."},
+{topic:"Series",q:"Σ 1/n² converges to:",opts:["π²/6","1","e","2"],ans:0,expl:"This is a famous result (Basel problem). p=2 > 1 so it converges, and its sum is π²/6."},
+
+// --- Convergence Tests ---
+{topic:"Convergence Tests",q:"Σ n/(n+1). The divergence test shows:",opts:["Converges","Diverges because lim aₙ = 1 ≠ 0","Inconclusive","Converges to 1"],ans:1,expl:"lim n/(n+1) = 1 ≠ 0, so by the divergence test the series diverges."},
+{topic:"Convergence Tests",q:"Best test for Σ n!/3ⁿ?",opts:["Ratio Test","Integral Test","p-Series Test","Comparison Test"],ans:0,expl:"Factorial in the numerator → Ratio Test. |aₙ₊₁/aₙ| = (n+1)/3 → ∞ > 1. Diverges."},
+{topic:"Convergence Tests",q:"Σ (−1)ⁿ/√n converges by the AST. Is it absolute or conditional?",opts:["Absolute","Conditional","Neither","Both"],ans:1,expl:"Σ 1/√n is a p-series with p=1/2 ≤ 1, which diverges. So Σ|aₙ| diverges but the alternating series converges → conditional."},
+{topic:"Convergence Tests",q:"Σ 1/(n·ln(n)) for n ≥ 2. Best test?",opts:["Integral Test","Ratio Test","Root Test","Comparison to 1/n"],ans:0,expl:"∫ 1/(x ln x) dx = ln(ln x) → ∞. Diverges by the Integral Test."},
+{topic:"Convergence Tests",q:"Σ (2n²+1)/(n⁴+3). Which test and what do you compare to?",opts:["LCT with 1/n²; converges","LCT with 1/n; diverges","Ratio test; converges","Divergence test; diverges"],ans:0,expl:"Dominant behavior is 2n²/n⁴ = 2/n². LCT with bₙ=1/n²: limit = 2, finite & positive. Since Σ1/n² converges (p=2>1), so does our series."},
+{topic:"Convergence Tests",q:"If Σaₙ converges absolutely, then:",opts:["Σaₙ also converges","Σaₙ diverges","We need more info","aₙ → 1"],ans:0,expl:"Absolute convergence implies convergence. This is a theorem."},
+
+// --- Maclaurin Series ---
+{topic:"Maclaurin Series",q:"The Maclaurin series for e^(−x²) begins:",opts:["1 − x² + x⁴/2! − x⁶/3! + ...","1 + x² + x⁴ + ...","−x² + x⁴/2 − x⁶/6 + ...","x − x³/3! + x⁵/5! − ..."],ans:0,expl:"Replace x with −x² in eˣ = 1+x+x²/2!+... → 1+(−x²)+(−x²)²/2!+... = 1−x²+x⁴/2!−x⁶/3!+..."},
+{topic:"Maclaurin Series",q:"The coefficient of x⁵ in the Maclaurin series for sin x is:",opts:["1/5!","−1/5!","1/5","0"],ans:0,expl:"sin x = x − x³/3! + x⁵/5! − ... The coefficient of x⁵ is +1/5! = 1/120."},
+{topic:"Maclaurin Series",q:"What is the Maclaurin series for x·cos x?",opts:["x − x³/2! + x⁵/4! − ...","x − x³/3! + x⁵/5! − ...","1 − x²/2! + x⁴/4! − ...","x + x³/2! + x⁵/4! + ..."],ans:0,expl:"cos x = 1 − x²/2! + x⁴/4! − ... Multiply by x: x − x³/2! + x⁵/4! − ..."},
+{topic:"Maclaurin Series",q:"The interval of convergence for ln(1+x) is:",opts:["(−1, 1)","(−1, 1]","[−1, 1]","(−∞, ∞)"],ans:1,expl:"Ratio test gives |x|<1. At x=1: Σ(−1)ⁿ⁺¹/n converges (AST). At x=−1: −Σ1/n diverges. So (−1, 1]."},
+
+// --- Polar ---
+{topic:"Polar",q:"Convert the polar point (4, π/3) to Cartesian (x, y).",opts:["(2, 2√3)","(2√3, 2)","(4, 4√3)","(−2, 2√3)"],ans:0,expl:"x = 4cos(π/3) = 4(1/2) = 2. y = 4sin(π/3) = 4(√3/2) = 2√3."},
+{topic:"Polar",q:"Convert (−3, 3) in Cartesian to polar (r, θ).",opts:["(3√2, 3π/4)","(3√2, π/4)","(3, 2π/3)","(−3√2, π/4)"],ans:0,expl:"r = √(9+9) = 3√2. tan θ = 3/(−3) = −1, point in Q2, so θ = 3π/4."},
+{topic:"Polar",q:"For r = 2sinθ, find dy/dx at θ = π/4.",opts:["0","1","−1","Undefined"],ans:3,expl:"r'=2cosθ. dy/dx = (r'sinθ+rcosθ)/(r'cosθ−rsinθ). At θ=π/4: r=√2, r'=√2. Num = √2·(√2/2)+√2·(√2/2) = 1+1 = 2. Den = √2·(√2/2)−√2·(√2/2) = 1−1 = 0. Denominator is 0, numerator ≠ 0 → vertical tangent → undefined."},
+{topic:"Polar",q:"For r = cos(2θ), how many petals?",opts:["2","4","8","1"],ans:1,expl:"r = cos(nθ): if n is even → 2n petals. n=2 → 4 petals."},
+{topic:"Polar",q:"What is r² in terms of x and y?",opts:["x² + y²","x² − y²","(x+y)²","√(x²+y²)"],ans:0,expl:"By definition r² = x² + y². This is one of the fundamental polar-Cartesian relationships."},
+];
+
+let scores = {right:0, wrong:0};
+let answered = new Set();
+let activeTopic = null;
+
+const topics = [...new Set(ALL_QUESTIONS.map(q=>q.topic))];
+
+function renderTopics(){
+  const bar = document.getElementById('topicBar');
+  bar.innerHTML = '<button class="topic-btn active" onclick="filterTopic(null,this)">All</button>' +
+    topics.map(t=>`<button class="topic-btn" onclick="filterTopic('${t}',this)">${t}</button>`).join('');
+}
+
+function filterTopic(t,btn){
+  activeTopic = t;
+  document.querySelectorAll('.topic-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderQuestions();
+}
+
+function renderQuestions(){
+  const qs = activeTopic ? ALL_QUESTIONS.filter(q=>q.topic===activeTopic) : ALL_QUESTIONS;
+  const container = document.getElementById('questions');
+  if(!qs.length){container.innerHTML='<p class="empty-msg">No questions here.</p>';return;}
+  container.innerHTML = qs.map((q,i)=>{
+    const gi = ALL_QUESTIONS.indexOf(q);
+    return `<div class="q-card" id="qcard-${gi}">
+      <div class="q-num">${q.topic.toUpperCase()} — Q${i+1}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">${q.opts.map((o,j)=>`<button class="opt ${answered.has(gi)?(j===q.ans?'correct locked':(j===answered.get?.(gi)?'incorrect locked':'locked')):''}}" onclick="pick(${gi},${j},this)" ${answered.has(gi)?'disabled':''}>${String.fromCharCode(65+j)}) ${o}</button>`).join('')}</div>
+      <div class="explanation ${answered.has(gi)?'show':''}" id="expl-${gi}">${q.expl}</div>
+    </div>`;
+  }).join('');
+}
+
+// fix: use a map instead of set for tracking which option was picked
+answered = new Map();
+
+function pick(qi,oi,btn){
+  if(answered.has(qi)) return;
+  answered.set(qi,oi);
+  const q = ALL_QUESTIONS[qi];
+  const card = document.getElementById(`qcard-${qi}`);
+  const opts = card.querySelectorAll('.opt');
+  opts.forEach((o,j)=>{
+    o.classList.add('locked');
+    o.disabled = true;
+    if(j===q.ans) o.classList.add('correct');
+    else if(j===oi) o.classList.add('incorrect');
+  });
+  document.getElementById(`expl-${qi}`).classList.add('show');
+  if(oi===q.ans) scores.right++; else scores.wrong++;
+  updateScore();
+}
+
+function updateScore(){
+  document.getElementById('right').textContent = scores.right;
+  document.getElementById('wrongEl').textContent = scores.wrong;
+  document.getElementById('total').textContent = answered.size;
+}
+
+function resetAll(){
+  scores={right:0,wrong:0};
+  answered = new Map();
+  updateScore();
+  renderQuestions();
+}
+
+renderTopics();
+renderQuestions();
+</script>
+</body>
+</html>
